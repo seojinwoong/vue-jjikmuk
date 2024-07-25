@@ -1,28 +1,28 @@
 <template>
   <Navbar />
-  <h1>영화정보</h1>
-  <div v-for="(movie, index) in data" :key="index" class="item">
-    <figure class="posterBox">
-      <img :src="movie.imgUrl" :alt="movie.title">
-    </figure>
-    <div class="info">
-      <h3 class="bh-yellow" :style="textRed">{{ movie.title }}</h3>
-      <p>개봉: {{ movie.year }}</p>
-      <p>장르: {{ movie.category }}</p>
-      <button @:click="increaseLike(index)">좋아요 </button> <span>{{ movie.like }}</span>
-      <p style="margin-top: 10px;">
-        <button @click="isModal = true; selectedMovieNumber = index">상세보기</button>
-      </p>
-    </div>
-  </div>
-
-  <Modal/>
+  <Event :text="text[eventTextNum]"/>
+  <SearchBar :data="data_temp" @searchMovie="searchMovie($event)"/>
+  <p><button @click="showAllMovie">전체보기</button></p>
+  <Movies
+   :data="data_temp"
+   @openModal="isModal=true; selectedMovieNumber=$event"
+   @increaseLike="increaseLike($event)"
+   />
+  <Modal 
+    :data="data" 
+    :isModal="isModal" 
+    :selectedMovieNumber="selectedMovieNumber"
+    @closeModal="isModal=false"
+    />
 </template>
 
 <script>
   import data from './assets/movies';
   import Navbar from './components/Navbar.vue';
+  import Event from './components/Event.vue';
   import Modal from './components/Modal.vue';
+  import Movies from './components/Movies.vue';
+  import SearchBar from './components/SearchBar.vue';
 
   export default {
     name: "App",
@@ -30,17 +30,51 @@
       return { // 반드시 return 문 써주기
         isModal: false,
         data: data,
-        selectedMovieNumber: 0 
+        data_temp: [...data], // 사본
+        selectedMovieNumber: 0,
+        text: [
+          'NETFLIX 강렬한 운명의 드라마, 경기크리쳐',
+          '디즈니 100주년 기념작, 위시',
+          '그날, 대한민국의 운명이 바뀌었다, 서울의 봄',
+        ],
+        eventTextNum: 0,
+        interval: null
       }
     },
     methods: {
-      increaseLike(index) {
-        this.data[index].like += 1;
+      increaseLike(id) {
+        // this.data[index].like += 1;
+        this.data.find(movie => {
+          if(movie.id === id) {
+            movie.like += 1;
+          }
+        })
+      },
+      searchMovie(title) {
+        // 영화제목이 포함된 데이터를 가져옴
+        this.data_temp = this.data.filter(movie => {
+          return movie.title.includes(title);
+        })
+      },
+      showAllMovie() {
+        this.data_temp = [...this.data];
       }
     },
     components: {
-      Navbar: Navbar,
-      Modal: Modal
+      Navbar,
+      Event,
+      Modal,
+      Movies,
+      SearchBar
+    },
+    mounted() {
+      this.interval = setInterval(() => {
+        if (this.eventTextNum == this.text.length - 1) this.eventTextNum = 0;
+        else this.eventTextNum += 1;
+      },3000); 
+    },
+    unmounted() {
+      clearInterval(this.interval);
     }
   }
 </script>
